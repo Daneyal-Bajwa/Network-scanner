@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nightly-network-scan
+spec:
+  schedule: "0 2 * * *" # standard Cron syntax for 2:00 AM daily
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          hostNetwork: true # Bypasses K8s network isolation
+          containers:
+          - name: vuln-scanner
+            image: vuln-scanner:v1
+            imagePullPolicy: IfNotPresent # Tells K8s to use the local image, not download from the internet
+            envFrom:
+            - configMapRef:
+                name: scanner-config
+          restartPolicy: OnFailure

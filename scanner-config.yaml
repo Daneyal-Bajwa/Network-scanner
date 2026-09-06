@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scanner-config
+data:
+  # This replaces the -e flag used in Docker
+  MONGO_URI: "mongodb://mongodb-service:27017/"
