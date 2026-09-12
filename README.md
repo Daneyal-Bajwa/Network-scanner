@@ -31,19 +31,15 @@ If you wish to test the scanner or the web interface locally on your machine wit
 
 **1. Set up the environment and dependencies**
 
-`uv venv`
-
-`uv pip install -r requirements.txt`
+      uv venv
+      uv pip install -r requirements.txt
 
 Ensure you have permission to scan the target network.
 
 **2. Run the CLI Scanner**
 
-`python scanner.py`
+      python scanner.py
 
-**3. Run the Web Dashboard**
-
-`streamlit run run-web.py`
 
 ## Deployment: Kubernetes (Production Method)
 
@@ -51,27 +47,25 @@ Ensure you have permission to scan the target network.
 
 Package the local python code into a container image.
 
-`docker build -t vuln-scanner:v1`
+      docker build -t vuln-scanner:v1
 
 **2. Deploy the Database**
 
 Spin up the MongoDB instance inside the cluster.
 
-`kubectl apply -f mongo-deployment.yaml`
-
-`kubectl apply -f mongo-service.yaml`
+      kubectl apply -f mongo-deployment.yaml
+      kubectl apply -f mongo-service.yaml
 
 **3. Configure and Schedule the Scanner**
 
 Apply the environment variables and the CronJob to automate the nightly scans.
 
-`kubectl apply -f scanner-config.yaml`
-
-`kubectl apply -f scanner-cronjob.yaml`
+      kubectl apply -f scanner-config.yaml
+      kubectl apply -f scanner-cronjob.yaml
 
 (To trigger an ad-hoc scan immediately, run:
 
-`kubectl create job --from=cronjob/nightly-network-scan manual-scan-01`
+      kubectl create job --from=cronjob/nightly-network-scan manual-scan-01
 
 ## Technical Skills Demonstrated
 * DevDecOps & Cloud-Native Architecture: Moving local scripts into containerised, scalable cloud environments.
