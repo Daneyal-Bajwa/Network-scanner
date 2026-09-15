@@ -1,14 +1,11 @@
 import socket
 import concurrent.futures 
 import subprocess
-import json
 import os
 import requests
 import time
 import ipaddress
 import platform
-import pymongo
-from datetime import datetime
 
 ports = [22, 80, 443, 139, 445, 631, 3389, 8080, 8443]
 
@@ -174,6 +171,9 @@ def Scan_Port(ip: str, port: int) -> tuple[str, bool]:
             # initiate a TCP handshake (SYN -> SYN-ACK -> ACK)
             result = sock.connect_ex((ip, port))
 
+            if result != 0:
+                return port, False
+
             # Web servers (80, 443, 8080) wait for us to speak first.
             # send a basic HTTP GET request to force them to reply
             # TODO: 443 and 8443 are secure http, need ssl wrapper
@@ -187,24 +187,21 @@ def Scan_Port(ip: str, port: int) -> tuple[str, bool]:
             # decode the bytes to text, ignoring characters that can't be decoded
             banner = banner_bytes.decode('utf-8', errors='ignore').strip()
 
-            if result == 0:
-                # banners can be huge, just want the first line (up to 50 characters)
-                if banner:
-                    first_line = banner.split('\n')[0]
-                    version = first_line.split(' ')[0]
-                    result = Check_Vulnerabilities(version)
-                    print(version)
-                    print(result)
-                    if result == []:
-                        return f"Port {port} {first_line[:50].strip()}",True
-                    else:
-                        # getting just first one as there could be several
-                        first_vuln = result[0]
-                        return f"Port {port} {first_line[:50].strip()} !!! {first_vuln['cve_id']} (Severity: {first_vuln['score']})", True
-                return f"Port {port}", False
-            else:
-                return port, False
-    except (socket.timeout, TimeoutError):
+            # banners can be huge, just want the first line (up to 50 characters)
+            if banner:
+                first_line = banner.split('\n')[0]
+                version = first_line.split(' ')[0]
+                vulnerabilities = Check_Vulnerabilities(version)
+                print(version)
+                print(vulnerabilities)
+                if not vulnerabilities:
+                    return f"Port {port} {first_line[:50].strip()}", True
+
+                first_vuln = vulnerabilities[0]
+                return f"Port {port} {first_line[:50].strip()} !!! {first_vuln['cve_id']} (Severity: {first_vuln['score']})", True
+
+            return f"Port {port}", True
+    except (OSError, socket.timeout, TimeoutError):
         # banner request timed out
         return f"Port {port}", True
         
@@ -325,76 +322,4 @@ def Check_Vulnerabilities(banner: str, max_retries: int = 2) -> list[dict]:
     # if the loop finishes all retries without returning, the server is truly dead today
     print("[-] NVD API failed to respond after multiple attempts. Moving on.")
     return []
-
-if __name__ == "__main__":
-    target = Get_Local_Subnet()
-    print(f"[*] Dynamically detected target subnet: {target}")
-    
-    mongo_uri = os.getenv("MONGO_URI") # Pulled from K8s ConfigMap
-    
-    print(f"[*] Starting scan against target: {target}")
-    
-    # 1. Run scanner (assuming execution logic populates the scan_results dict)
-    ips = Scan_Network(target)
-    scan_results = {}
-    # ... existing loop that populates scan_results ...
-    
-    # 2. Push to MongoDB
-    if mongo_uri:
-        print(f"[*] Connecting to database at {mongo_uri}...")
-        client = pymongo.MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
-        
-        # Create a database called 'SecOps' and a collection called 'NetworkScans'
-        db = client["SecOps"]
-        collection = db["NetworkScans"]
-        
-        # Format the payload for the database
-        payload = {
-            "scan_date": datetime.utcnow().isoformat(),
-            "target_subnet": target,
-            "results": scan_results
-        }
-        
-        # Insert the data
-        collection.insert_one(payload)
-        print("[+] Scan data successfully saved to MongoDB!")
-    else:
-        print("[-] No MONGO_URI found. Skipping database injection.")
-
-'''
-
-scan_results = {}
-ips = scan_network()
-for ip in ips:
-    open_ports = []
-    # using ThreadPoolExecutor to run scans concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=100) as executor:
-        # map the target IP and ports to the scanning function
-        futures = [executor.submit(scan_port, ip, port) for port in ports]
-        
-        for future in concurrent.futures.as_completed(futures):
-            port, is_open = future.result()
-            if is_open:
-                open_ports.append(port)
-    if open_ports:
-        open_ports.sort()
-        print(f"{ip} is running services: {open_ports}")
-    else:
-        print(f"{ip} is running with no open ports")
-
-    # add the data to our dictionary
-    scan_results[ip] = {
-        "status": "online",
-        "open_ports": open_ports
-    }
-
-# save results to JSON file
-print(f"\nSaving results to {output_file}...")
-with open(output_file, "w") as outfile:
-    # indent=4 makes the JSON file pretty and readable
-    json.dump(scan_results, outfile, indent=4)
-
-'''
-
-
 

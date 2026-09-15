@@ -9,10 +9,12 @@ spec:
       template:
         spec:
           hostNetwork: true # Bypasses K8s network isolation
+          dnsPolicy: ClusterFirstWithHostNet
           containers:
           - name: vuln-scanner
-            image: vuln-scanner:v1
+            image: vuln-scanner:v2
             imagePullPolicy: IfNotPresent # Tells K8s to use the local image, not download from the internet
+            command: ["python", "scan_job.py"]
             envFrom:
             - configMapRef:
                 name: scanner-config
