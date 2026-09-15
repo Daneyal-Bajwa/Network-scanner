@@ -27,7 +27,7 @@ Originally developed as a standalone script, this project has been upgraded into
 * uv (for lightning-fast local python environment management)
 
 ## Local Development (Testing Method)
-If you wish to test the scanner locally on your machine without spinning up the Kubernetes cluster, use `uv` to manage the isolated environment.
+If you wish to test the scanner locally or via FastAPI on your machine without spinning up the Kubernetes cluster, use `uv` to manage the isolated environment.
 
 **1. Set up the environment and dependencies**
 
@@ -36,9 +36,15 @@ If you wish to test the scanner locally on your machine without spinning up the 
 
 Ensure you have permission to scan the target network.
 
-**2. Run the CLI Scanner**
+**A. Run the CLI Scanner**
 
       python scanner.py
+
+**B. Run FastAPI to access the script**
+
+      .\.venv\Scripts\python.exe -m uvicorn main:app --reload
+
+Go onto http://127.0.0.1:8000/docs to access the script via FastAPI.
 
 
 ## Deployment: Kubernetes (Production Method)
