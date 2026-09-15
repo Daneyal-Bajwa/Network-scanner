@@ -27,7 +27,7 @@ Originally developed as a standalone script, this project has been upgraded into
 * uv (for lightning-fast local python environment management)
 
 ## Local Development (Testing Method)
-If you wish to test the scanner or the web interface locally on your machine without spinning up the Kubernetes cluster, use `uv` to manage the isolated environment.
+If you wish to test the scanner locally on your machine without spinning up the Kubernetes cluster, use `uv` to manage the isolated environment.
 
 **1. Set up the environment and dependencies**
 
